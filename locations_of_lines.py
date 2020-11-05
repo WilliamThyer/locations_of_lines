@@ -16,39 +16,49 @@ class LineFactory:
 
     Attributes
     ----------
-    number_of_rows_cols : str
-        number of rows and columns in the plot
-    line_length : str
+    line_length : int
         length of lines
     line_gap : int
         length of gap between lines
     column_density : int
-        how many columns to skip between drawn columns (defaults to 1% intervals)
+        how many columns to skip between drawn columns
     row_density : int
-        how many rows to skip between drawn rows (defaults to 1% intervals)
-    vertical_top_layer : bool
-        If false, horizontal lines are drawn on top        
+        how many rows to skip between drawn rows  
     """
 
-    def __init__(self,line_length:int,line_gap:int,column_density:int=None,row_density:int=None):
+    def __init__(self,line_length:int,line_gap:int,column_density:int,row_density:int):
 
-        self.number_of_rows_cols = 1000
+        self.number_of_rows_cols = 1000 # hardcoded
         self.rows_cols = np.arange(self.number_of_rows_cols*3)
         self.line_length = line_length
         self.line_gap = line_gap
-        self.column_density = 100-column_density
         self.row_density = 100-row_density
+        self.column_density = 100-column_density
 
-        #create lines
-        self.horizontal_lines_xs,self.horizontal_lines_ys = self._generate_all_lines(horizontal=True)
-        self.vertical_lines_ys,self.vertical_lines_xs = self._generate_all_lines(horizontal=False)
+        self.make_lines()
     
-    def make_lines(self,line_length:int,line_gap:int,row_density:int=None,column_density:int=None):
+    def make_lines(self,line_length:int=None,line_gap:int=None,row_density:int=None,column_density:int=None):
+        """Update lines with new values and recreate lines. Used for update upon widget value changing.
         
-        self.line_length = line_length
-        self.line_gap = line_gap
-        self.column_density = 100-column_density
-        self.row_density = 100-row_density
+        Parameters
+        ----------
+        line_length : int
+            length of lines
+        line_gap : int
+            length of gap between lines
+        column_density : int
+            how many columns to skip between drawn columns
+        row_density : int
+            how many rows to skip between drawn rows  
+        """
+        if line_length:
+            self.line_length = line_length
+        if line_gap:
+            self.line_gap = line_gap
+        if row_density:
+            self.row_density = 100-row_density
+        if column_density:
+            self.column_density = 100-column_density
 
         self.horizontal_lines_xs,self.horizontal_lines_ys = self._generate_all_lines(horizontal=True)
         self.vertical_lines_ys,self.vertical_lines_xs = self._generate_all_lines(horizontal=False)
@@ -65,7 +75,6 @@ class LineFactory:
         -------
         lines1 : np.array
             First set of coordinates for lines. 
-            
         lines2 : np.array
             Second set of coordinates for lines
         """
@@ -128,8 +137,6 @@ class LineFactory:
             )
 
         #plotting details
-        # if horizontal_top_layer:
-        #     vertical_lines.level = 'underlay'
         plot.toolbar.logo = None
         plot.toolbar_location = None
         plot.axis.visible = False
@@ -144,10 +151,6 @@ lines = LineFactory(
 
 line_thickness = 1
 
-layers = ['underlay','overlay']
-vertical_overlay = 0
-vertical_layer = layers[vertical_overlay]
-
 horizontal_source = ColumnDataSource(data=dict(
     horizontal_lines_xs=lines.horizontal_lines_xs,
     horizontal_lines_ys=lines.horizontal_lines_ys))
@@ -159,7 +162,7 @@ vertical_source = ColumnDataSource(data=dict(
 # Set up plot
 plot = lines.plot_lines()
 horizontal_lines = plot.multi_line(xs = 'horizontal_lines_xs', ys='horizontal_lines_ys',source=horizontal_source,line_width=line_thickness,color='black')
-vertical_lines = plot.multi_line(xs = 'vertical_lines_xs', ys='vertical_lines_ys',source=vertical_source,line_width=line_thickness,color='black',level=vertical_layer)
+vertical_lines = plot.multi_line(xs = 'vertical_lines_xs', ys='vertical_lines_ys',source=vertical_source,line_width=line_thickness,color='black')
 
 # Set up widgets
 # data widgets
@@ -177,8 +180,6 @@ column_color_widget.js_link('color', vertical_lines.glyph, 'line_color')
 line_thickness = Slider(title="Line Thickness", value=1, start=0, end=10, step=1)
 line_thickness.js_link('value', vertical_lines.glyph, 'line_width')
 line_thickness.js_link('value', horizontal_lines.glyph, 'line_width')
-
-vertical_overlay = RadioButtonGroup(labels=['Rows On Top','Columns On Top'], active=0)
 
 # Set up callbacks
 def update_data(attrname, old, new):
